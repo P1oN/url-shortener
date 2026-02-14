@@ -3,7 +3,6 @@
 Simple URL shortener service with PostgreSQL + Redis, structured logs, and a versioned HTTP API.
 
 ## Features
-- `/v1` API with API key auth.
 - PostgreSQL persistence + Redis cache.
 - Configurable timeouts, cache TTL, and DB pool sizing.
 - Explicit migration runner.
