@@ -1,0 +1,6 @@
+CREATE TABLE url_stats (
+  id SERIAL PRIMARY KEY,
+  url_id INT NOT NULL REFERENCES urls (id) ON DELETE CASCADE,
+  click_count INT DEFAULT 0,
+  last_clicked_at TIMESTAMP DEFAULT NULL
+);

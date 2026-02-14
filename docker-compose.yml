@@ -1,0 +1,75 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: url-shortener-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB_NAME=0
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - ADDRESS=${ADDRESS}
+      - BASE_URL=${BASE_URL}
+      - MIGRATIONS_PATH=${MIGRATIONS_PATH}
+      - API_KEY=${API_KEY}
+      - READ_TIMEOUT=${READ_TIMEOUT}
+      - WRITE_TIMEOUT=${WRITE_TIMEOUT}
+      - IDLE_TIMEOUT=${IDLE_TIMEOUT}
+      - GRACEFUL_SHUTDOWN_TIMEOUT=${GRACEFUL_SHUTDOWN_TIMEOUT}
+      - REQUEST_TIMEOUT=${REQUEST_TIMEOUT}
+      - CACHE_TTL=${CACHE_TTL}
+      - DB_MAX_OPEN_CONNS=${DB_MAX_OPEN_CONNS}
+      - DB_MAX_IDLE_CONNS=${DB_MAX_IDLE_CONNS}
+      - DB_CONN_MAX_LIFETIME=${DB_CONN_MAX_LIFETIME}
+      - DB_CONN_MAX_IDLE_TIME=${DB_CONN_MAX_IDLE_TIME}
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: url-shortener-redis
+    ports:
+      - "6379:6379"
+    command:
+      [
+        "redis-server",
+        "--save",
+        "60",
+        "1",
+        "--loglevel",
+        "warning",
+        "--requirepass",
+        "${REDIS_PASSWORD}",
+      ]
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: url-shortener-postgres
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
