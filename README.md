@@ -8,7 +8,7 @@ Simple URL shortener service with PostgreSQL + Redis, structured logs, and a ver
 - Explicit migration runner.
 
 ## Prerequisites
-- Go 1.23+
+- Go 1.26+
 - Docker + Docker Compose (for local DB/Redis)
 
 ## Quick Start (Docker Compose)

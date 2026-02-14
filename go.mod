@@ -1,6 +1,6 @@
 module url-shortener-go
 
-go 1.23
+go 1.26
 
 require (
 	github.com/go-redis/redis v6.15.9+incompatible

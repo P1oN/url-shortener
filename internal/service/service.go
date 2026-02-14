@@ -49,8 +49,7 @@ func (s *Service) CreateShortURL(ctx context.Context, opts models.CreateURLOptio
 
 	var expiresAt *time.Time
 	if opts.ExpiresIn > 0 {
-		expTime := time.Now().Add(opts.ExpiresIn)
-		expiresAt = &expTime
+		expiresAt = new(time.Time(time.Now().Add(opts.ExpiresIn)))
 	}
 
 	shortCode := opts.CustomCode
