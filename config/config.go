@@ -38,12 +38,12 @@ type Config struct {
 
 	Server ServerConfig
 
-	CacheTTL           time.Duration
-	RequestTimeout     time.Duration
-	DBMaxOpenConns     int
-	DBMaxIdleConns     int
-	DBConnMaxLifetime  time.Duration
-	DBConnMaxIdleTime  time.Duration
+	CacheTTL          time.Duration
+	RequestTimeout    time.Duration
+	DBMaxOpenConns    int
+	DBMaxIdleConns    int
+	DBConnMaxLifetime time.Duration
+	DBConnMaxIdleTime time.Duration
 }
 
 func Load() (*Config, error) {
@@ -73,12 +73,12 @@ func Load() (*Config, error) {
 			IdleTimeout:             getDuration("IDLE_TIMEOUT", 60*time.Second),
 			GracefulShutdownTimeout: getDuration("GRACEFUL_SHUTDOWN_TIMEOUT", 5*time.Second),
 		},
-		CacheTTL:           getDuration("CACHE_TTL", 1*time.Hour),
-		RequestTimeout:     getDuration("REQUEST_TIMEOUT", 5*time.Second),
-		DBMaxOpenConns:     getInt("DB_MAX_OPEN_CONNS", 25),
-		DBMaxIdleConns:     getInt("DB_MAX_IDLE_CONNS", 10),
-		DBConnMaxLifetime:  getDuration("DB_CONN_MAX_LIFETIME", 30*time.Minute),
-		DBConnMaxIdleTime:  getDuration("DB_CONN_MAX_IDLE_TIME", 5*time.Minute),
+		CacheTTL:          getDuration("CACHE_TTL", 1*time.Hour),
+		RequestTimeout:    getDuration("REQUEST_TIMEOUT", 5*time.Second),
+		DBMaxOpenConns:    getInt("DB_MAX_OPEN_CONNS", 25),
+		DBMaxIdleConns:    getInt("DB_MAX_IDLE_CONNS", 10),
+		DBConnMaxLifetime: getDuration("DB_CONN_MAX_LIFETIME", 30*time.Minute),
+		DBConnMaxIdleTime: getDuration("DB_CONN_MAX_IDLE_TIME", 5*time.Minute),
 	}
 
 	if err := cfg.Validate(); err != nil {

@@ -31,6 +31,7 @@
 - `make migrate-version VERSION=2`: migrate to a specific version.
 - `make test`: run unit tests.
 - `make test-integration`: run integration tests.
+- `make migrate-up-integration`: run the migration integration test.
 
 ## Coding Style & Naming Conventions
 - Follow standard Go formatting; use `gofmt` before commit.
@@ -41,6 +42,7 @@
 ## Testing Guidelines
 - Use Go’s `testing` package; prefer table-driven tests.
 - Integration tests are guarded by `INTEGRATION_TESTS=1` and require DB + Redis.
+- Run `make migrate-up-integration` when migrations change.
 - Run `go test ./...` locally and include any new test setup notes in your PR.
 
 ## Commit & Pull Request Guidelines

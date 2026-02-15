@@ -12,19 +12,19 @@ import (
 )
 
 type Service struct {
-	repo          Repository
-	cache         Cache
-	baseURL       string
-	cacheTTL      time.Duration
+	repo           Repository
+	cache          Cache
+	baseURL        string
+	cacheTTL       time.Duration
 	requestTimeout time.Duration
 }
 
 func New(repo Repository, cache Cache, baseURL string, cacheTTL time.Duration, requestTimeout time.Duration) *Service {
 	return &Service{
-		repo:          repo,
-		cache:         cache,
-		baseURL:       baseURL,
-		cacheTTL:      cacheTTL,
+		repo:           repo,
+		cache:          cache,
+		baseURL:        baseURL,
+		cacheTTL:       cacheTTL,
 		requestTimeout: requestTimeout,
 	}
 }

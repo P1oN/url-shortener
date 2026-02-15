@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+.DS_Store
+bin
+dist
+tmp
+*.out
+**/*_test.go
+**/.DS_Store

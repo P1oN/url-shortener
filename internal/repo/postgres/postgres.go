@@ -35,11 +35,27 @@ func NewRepository(connStr string, pool PoolConfig) (*Repository, error) {
 	db.SetConnMaxLifetime(pool.ConnMaxLifetime)
 	db.SetConnMaxIdleTime(pool.ConnMaxIdleTime)
 
-	if err = db.Ping(); err != nil {
+	if err = pingWithRetry(db, 10, 500*time.Millisecond); err != nil {
 		return nil, fmt.Errorf("error connecting to the database: %w", err)
 	}
 
 	return &Repository{db: db}, nil
+}
+
+func pingWithRetry(db *sql.DB, attempts int, baseDelay time.Duration) error {
+	var err error
+	delay := baseDelay
+	for i := 0; i < attempts; i++ {
+		err = db.Ping()
+		if err == nil {
+			return nil
+		}
+		time.Sleep(delay)
+		if delay < 5*time.Second {
+			delay *= 2
+		}
+	}
+	return err
 }
 
 func (r *Repository) Create(ctx context.Context, url *models.URL) error {

@@ -15,11 +15,12 @@ type mockRepo struct {
 	getByShortCodeCalls int
 	urlByOriginal       *models.URL
 	urlByShortCode      *models.URL
+	createErr           error
 }
 
 func (m *mockRepo) Create(_ context.Context, _ *models.URL) error {
 	m.createCalls++
-	return nil
+	return m.createErr
 }
 
 func (m *mockRepo) GetByShortCode(_ context.Context, _ string) (*models.URL, error) {
@@ -134,5 +135,19 @@ func TestGetFullURL_CacheHit(t *testing.T) {
 	}
 	if cache.getCalls != 1 {
 		t.Fatalf("expected cache get call, got %d", cache.getCalls)
+	}
+}
+
+func TestCreateShortURL_ConflictOnCustomCode(t *testing.T) {
+	repo := &mockRepo{createErr: ErrConflict}
+	cache := &mockCache{}
+	svc := New(repo, cache, "http://localhost:8080", time.Hour, 2*time.Second)
+
+	_, err := svc.CreateShortURL(context.Background(), models.CreateURLOptions{
+		OriginalURL: "https://example.com",
+		CustomCode:  "taken",
+	})
+	if !errors.Is(err, ErrConflict) {
+		t.Fatalf("expected ErrConflict, got %v", err)
 	}
 }

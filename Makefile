@@ -1,6 +1,6 @@
 SHELL := /bin/sh
 
-.PHONY: help run migrate-up migrate-down migrate-version build test test-integration
+.PHONY: help run migrate-up migrate-down migrate-version build test test-integration migrate-up-integration
 
 help:
 	@printf "Targets:\n"
@@ -11,6 +11,7 @@ help:
 	@printf "  build              Build server and migrate binaries\n"
 	@printf "  test               Run unit tests\n"
 	@printf "  test-integration   Run integration tests\n"
+	@printf "  migrate-up-integration   Run migration integration test\n"
 
 run:
 	go run ./cmd/server
@@ -34,3 +35,6 @@ test:
 
 test-integration:
 	INTEGRATION_TESTS=1 go test ./...
+
+migrate-up-integration:
+	INTEGRATION_TESTS=1 go test ./internal/repo/postgres -run TestMigrations_Up

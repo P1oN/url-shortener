@@ -11,6 +11,8 @@ import (
 
 	"url-shortener-go/internal/models"
 	"url-shortener-go/internal/service"
+
+	"github.com/gorilla/mux"
 )
 
 type stubRepo struct {
@@ -81,6 +83,77 @@ func TestCreateShortURLHandler_Success(t *testing.T) {
 	}
 	if repo.created == nil {
 		t.Fatalf("expected create to be called")
+	}
+}
+
+func TestCreateShortURLHandler_InvalidJSON(t *testing.T) {
+	repo := &stubRepo{}
+	cache := &stubCache{}
+	svc := service.New(repo, cache, "http://localhost:8080", time.Hour, 2*time.Second)
+	handlers := NewHandlers(svc)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/shorten", bytes.NewBufferString("{bad json"))
+	rec := httptest.NewRecorder()
+
+	handlers.CreateShortURLHandler(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestCreateShortURLHandler_MissingURL(t *testing.T) {
+	repo := &stubRepo{}
+	cache := &stubCache{}
+	svc := service.New(repo, cache, "http://localhost:8080", time.Hour, 2*time.Second)
+	handlers := NewHandlers(svc)
+
+	body, _ := json.Marshal(map[string]interface{}{})
+	req := httptest.NewRequest(http.MethodPost, "/v1/shorten", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+
+	handlers.CreateShortURLHandler(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestCreateShortURLHandler_NegativeExpires(t *testing.T) {
+	repo := &stubRepo{}
+	cache := &stubCache{}
+	svc := service.New(repo, cache, "http://localhost:8080", time.Hour, 2*time.Second)
+	handlers := NewHandlers(svc)
+
+	negative := int64(-10)
+	body, _ := json.Marshal(map[string]interface{}{
+		"original_url":       "https://example.com",
+		"expires_in_seconds": negative,
+	})
+	req := httptest.NewRequest(http.MethodPost, "/v1/shorten", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+
+	handlers.CreateShortURLHandler(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestGetFullURLHandler_NotFound(t *testing.T) {
+	repo := &stubRepo{}
+	cache := &stubCache{}
+	svc := service.New(repo, cache, "http://localhost:8080", time.Hour, 2*time.Second)
+	handlers := NewHandlers(svc)
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/missing", nil)
+	req = mux.SetURLVars(req, map[string]string{"code": "missing"})
+	rec := httptest.NewRecorder()
+
+	handlers.GetFullURLHandler(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", rec.Code)
 	}
 }
 
