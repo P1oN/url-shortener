@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis"
+	redis "github.com/redis/go-redis/v9"
 	"github.com/joho/godotenv"
 )
 
@@ -35,6 +35,7 @@ type Config struct {
 	BaseURL        string
 	MigrationsPath string
 	APIKey         string
+	EnableSwagger  bool
 
 	Server ServerConfig
 
@@ -61,6 +62,7 @@ type Env struct {
 	BaseURL        string
 	MigrationsPath string
 	APIKey         string
+	EnableSwagger  bool
 	Address        string
 
 	ReadTimeout             time.Duration
@@ -120,6 +122,7 @@ func FromEnv(envVars []string) Env {
 		BaseURL:        strings.TrimRight(getRequiredString(envMap, "BASE_URL"), "/"),
 		MigrationsPath: getRequiredString(envMap, "MIGRATIONS_PATH"),
 		APIKey:         getRequiredString(envMap, "API_KEY"),
+		EnableSwagger:  getBool(envMap, "ENABLE_SWAGGER", false),
 		Address:        getRequiredString(envMap, "ADDRESS"),
 
 		ReadTimeout:             getDuration(envMap, "READ_TIMEOUT", 15*time.Second),
@@ -185,6 +188,7 @@ func (e Env) ToConfig() *Config {
 		BaseURL:        strings.TrimRight(e.BaseURL, "/"),
 		MigrationsPath: e.MigrationsPath,
 		APIKey:         e.APIKey,
+		EnableSwagger:  e.EnableSwagger,
 		Server: ServerConfig{
 			Address:                 e.Address,
 			ReadTimeout:             e.ReadTimeout,
@@ -227,6 +231,19 @@ func getDuration(envMap map[string]string, key string, defaultValue time.Duratio
 	value, err := time.ParseDuration(valueStr)
 	if err != nil {
 		log.Printf("Invalid duration for %s: %s. Using default: %s", key, valueStr, defaultValue)
+		return defaultValue
+	}
+	return value
+}
+
+func getBool(envMap map[string]string, key string, defaultValue bool) bool {
+	valueStr := strings.TrimSpace(envMap[key])
+	if valueStr == "" {
+		return defaultValue
+	}
+	value, err := strconv.ParseBool(valueStr)
+	if err != nil {
+		log.Printf("Invalid bool for %s: %s. Using default: %t", key, valueStr, defaultValue)
 		return defaultValue
 	}
 	return value

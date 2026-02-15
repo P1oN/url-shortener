@@ -3,7 +3,11 @@
 ## Project Structure & Module Organization
 - `cmd/server`: main HTTP API entrypoint.
 - `cmd/migrate`: migration runner for PostgreSQL.
+- `cmd/openapi-gen`: local OpenAPI contract generator.
+- `api/openapi.yaml`: source OpenAPI specification.
 - `internal/httpapi`: handlers and routing (`/v1/*`).
+- `internal/httpapi/openapi.gen.go`: generated OpenAPI server contract (do not hand-edit).
+- `internal/httpapi/swagger`: embedded Swagger OpenAPI spec assets.
 - `internal/httpapi/middleware`: auth + CORS middleware.
 - `internal/service`: business logic and interfaces.
 - `internal/repo`: database access (Postgres).
@@ -22,6 +26,7 @@
 - `go run ./cmd/migrate --version 2`: migrate to a specific version number.
 - `go build ./cmd/server`: build the server binary.
 - `go build ./cmd/migrate`: build the migration binary.
+- `go run ./cmd/openapi-gen`: regenerate OpenAPI-derived artifacts.
 - `go test ./...`: run unit tests.
 - `INTEGRATION_TESTS=1 go test ./...`: run integration tests (requires DB + Redis).
 - `docker compose up --build`: start app + Postgres + Redis in containers.
@@ -32,6 +37,8 @@
 - `make test`: run unit tests.
 - `make test-integration`: run integration tests.
 - `make migrate-up-integration`: run the migration integration test.
+- `make openapi-generate`: regenerate OpenAPI-derived artifacts.
+- `make openapi-check`: verify generated OpenAPI artifacts are up to date.
 
 ## Coding Style & Naming Conventions
 - Follow standard Go formatting; use `gofmt` before commit.
@@ -43,6 +50,7 @@
 - Use Go’s `testing` package; prefer table-driven tests.
 - Integration tests are guarded by `INTEGRATION_TESTS=1` and require DB + Redis.
 - Run `make migrate-up-integration` when migrations change.
+- Run `make openapi-generate` (or `make openapi-check`) when `api/openapi.yaml` changes.
 - Run `go test ./...` locally and include any new test setup notes in your PR.
 
 ## Commit & Pull Request Guidelines
@@ -56,4 +64,5 @@
 - Do not commit real secrets. Copy `.env.example` to `.env` and fill locally.
 - `API_KEY` is required for all API calls (`Authorization: Bearer <API_KEY>`).
 - `GET /v1/health` is unauthenticated for readiness checks.
+- `ENABLE_SWAGGER` controls `/swagger` and `/swagger/openapi.yaml`; when enabled, these docs endpoints are served without API key auth. Keep it `false` in production.
 - Ensure `MIGRATIONS_PATH` points to a file URL (e.g., `file:///root/migrations` in Docker).

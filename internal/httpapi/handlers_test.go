@@ -54,14 +54,6 @@ func (s *stubCache) Get(_ context.Context, _ string) (*models.URL, error) {
 	return nil, service.ErrNotFound
 }
 
-func (s *stubCache) Delete(_ context.Context, _ string) error {
-	return nil
-}
-
-func (s *stubCache) Close() error {
-	return nil
-}
-
 func TestCreateShortURLHandler_Success(t *testing.T) {
 	repo := &stubRepo{}
 	cache := &stubCache{}
@@ -166,5 +158,57 @@ func TestHealthHandler_OK(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+}
+
+func TestSetupRoutes_SwaggerEnabled(t *testing.T) {
+	repo := &stubRepo{}
+	cache := &stubCache{}
+	svc := service.New(repo, cache, "http://localhost:8080", time.Hour, 2*time.Second)
+	handlers := NewHandlers(svc)
+	router := SetupRoutes(handlers, true)
+
+	req := httptest.NewRequest(http.MethodGet, "/swagger/openapi.yaml", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+}
+
+func TestSetupRoutes_SwaggerDisabled(t *testing.T) {
+	repo := &stubRepo{}
+	cache := &stubCache{}
+	svc := service.New(repo, cache, "http://localhost:8080", time.Hour, 2*time.Second)
+	handlers := NewHandlers(svc)
+	router := SetupRoutes(handlers, false)
+
+	req := httptest.NewRequest(http.MethodGet, "/swagger/openapi.yaml", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", rec.Code)
+	}
+}
+
+func TestSetupRoutes_RootCodeRoute_IsHandledByRedirectHandler(t *testing.T) {
+	repo := &stubRepo{}
+	cache := &stubCache{}
+	svc := service.New(repo, cache, "http://localhost:8080", time.Hour, 2*time.Second)
+	handlers := NewHandlers(svc)
+	router := SetupRoutes(handlers, false)
+
+	req := httptest.NewRequest(http.MethodGet, "/bFKzkv", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	// Route should be handled by GetFullURLHandler (JSON 404), not router-level 404.
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", rec.Code)
+	}
+	if got := rec.Header().Get("Content-Type"); got != "application/json" {
+		t.Fatalf("expected Content-Type application/json, got %q", got)
 	}
 }

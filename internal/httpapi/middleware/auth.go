@@ -1,14 +1,19 @@
 package middleware
 
 import (
+	"crypto/subtle"
 	"net/http"
 	"strings"
 )
 
-func AuthMiddleware(apiKey string) func(http.Handler) http.Handler {
+func AuthMiddleware(apiKey string, allowUnauthedDocs bool) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/v1/health" {
+				next.ServeHTTP(w, r)
+				return
+			}
+			if allowUnauthedDocs && (r.URL.Path == "/swagger" || strings.HasPrefix(r.URL.Path, "/swagger/")) {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -20,7 +25,7 @@ func AuthMiddleware(apiKey string) func(http.Handler) http.Handler {
 			}
 
 			provided := strings.TrimPrefix(token, "Bearer ")
-			if provided != apiKey {
+			if subtle.ConstantTimeCompare([]byte(provided), []byte(apiKey)) != 1 {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}

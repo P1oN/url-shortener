@@ -7,7 +7,7 @@ import (
 )
 
 func TestAuthMiddleware_AllowsHealth(t *testing.T) {
-	handler := AuthMiddleware("secret")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	handler := AuthMiddleware("secret", false)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -22,7 +22,7 @@ func TestAuthMiddleware_AllowsHealth(t *testing.T) {
 }
 
 func TestAuthMiddleware_RejectsMissingToken(t *testing.T) {
-	handler := AuthMiddleware("secret")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	handler := AuthMiddleware("secret", false)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -37,7 +37,7 @@ func TestAuthMiddleware_RejectsMissingToken(t *testing.T) {
 }
 
 func TestAuthMiddleware_RejectsInvalidToken(t *testing.T) {
-	handler := AuthMiddleware("secret")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	handler := AuthMiddleware("secret", false)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -49,5 +49,20 @@ func TestAuthMiddleware_RejectsInvalidToken(t *testing.T) {
 
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401, got %d", rec.Code)
+	}
+}
+
+func TestAuthMiddleware_AllowsSwaggerWhenEnabled(t *testing.T) {
+	handler := AuthMiddleware("secret", true)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/swagger/", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
 	}
 }

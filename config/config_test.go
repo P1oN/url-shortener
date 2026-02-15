@@ -20,6 +20,7 @@ func TestFromEnvAndValidate(t *testing.T) {
 		"BASE_URL=http://localhost:8080/",
 		"MIGRATIONS_PATH=file:///root/migrations",
 		"API_KEY=secret",
+		"ENABLE_SWAGGER=true",
 		"ADDRESS=:8080",
 		"READ_TIMEOUT=10s",
 		"WRITE_TIMEOUT=11s",
@@ -54,6 +55,9 @@ func TestFromEnvAndValidate(t *testing.T) {
 	cfg := cfgEnv.ToConfig()
 	if cfg.Server.Address != ":8080" {
 		t.Fatalf("expected address :8080, got %s", cfg.Server.Address)
+	}
+	if !cfg.EnableSwagger {
+		t.Fatalf("expected swagger enabled")
 	}
 }
 
@@ -93,5 +97,8 @@ func TestDefaults(t *testing.T) {
 	}
 	if cfgEnv.DBMaxOpenConns != 25 {
 		t.Fatalf("expected default max open conns 25, got %d", cfgEnv.DBMaxOpenConns)
+	}
+	if cfgEnv.EnableSwagger {
+		t.Fatalf("expected default swagger disabled")
 	}
 }

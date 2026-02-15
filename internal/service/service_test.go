@@ -47,10 +47,6 @@ func (m *mockRepo) DeleteExpiredURLs(_ context.Context) error {
 	return nil
 }
 
-func (m *mockRepo) Close() error {
-	return nil
-}
-
 type mockCache struct {
 	getCalls int
 	url      *models.URL
@@ -66,14 +62,6 @@ func (m *mockCache) Get(_ context.Context, _ string) (*models.URL, error) {
 		return nil, ErrNotFound
 	}
 	return m.url, nil
-}
-
-func (m *mockCache) Delete(_ context.Context, _ string) error {
-	return nil
-}
-
-func (m *mockCache) Close() error {
-	return nil
 }
 
 func TestCreateShortURL_InvalidURL(t *testing.T) {

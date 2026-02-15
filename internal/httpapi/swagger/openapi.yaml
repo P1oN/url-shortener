@@ -1,0 +1,89 @@
+openapi: 3.0.3
+info:
+  title: URL Shortener API
+  version: 1.0.0
+servers:
+  - url: /
+paths:
+  /v1/shorten:
+    post:
+      operationId: postV1Shorten
+      summary: Create short URL
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateShortURLRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateShortURLResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API key
+  schemas:
+    CreateShortURLRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - original_url
+      properties:
+        original_url:
+          type: string
+          format: uri
+        custom_code:
+          type: string
+        expires_in_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+    CreateShortURLResponse:
+      type: object
+      required:
+        - short_url
+        - code
+      properties:
+        short_url:
+          type: string
+        code:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string

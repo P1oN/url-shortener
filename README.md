@@ -27,6 +27,7 @@ Optional tuning:
 - `READ_TIMEOUT`, `WRITE_TIMEOUT`, `IDLE_TIMEOUT`, `GRACEFUL_SHUTDOWN_TIMEOUT`
 - `REQUEST_TIMEOUT`, `CACHE_TTL`
 - `DB_MAX_OPEN_CONNS`, `DB_MAX_IDLE_CONNS`, `DB_CONN_MAX_LIFETIME`, `DB_CONN_MAX_IDLE_TIME`
+- `ENABLE_SWAGGER` (enable `/swagger` docs UI and `/swagger/openapi.yaml`)
 
 ## Quick Start (Docker Compose)
 1. Copy `.env.example` to `.env` and fill secrets.
@@ -52,6 +53,8 @@ make migrate-version VERSION=2
 make test
 make test-integration
 make migrate-up-integration
+make openapi-generate
+make openapi-check
 ```
 
 ## API
@@ -59,6 +62,13 @@ All requests require:
 ```
 Authorization: Bearer <API_KEY>
 ```
+
+## Swagger / OpenAPI
+- OpenAPI source: `api/openapi.yaml`
+- Generated server contract: `internal/httpapi/openapi.gen.go` (via `go run ./cmd/openapi-gen`)
+- Local docs UI (when enabled): `GET /swagger/`
+- OpenAPI document endpoint: `GET /swagger/openapi.yaml`
+- Set `ENABLE_SWAGGER=true` locally. Keep it `false` in production.
 
 ### Create short URL
 `POST /v1/shorten`

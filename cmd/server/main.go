@@ -53,13 +53,13 @@ func main() {
 	service := service.New(repo, cache, cfg.BaseURL, cfg.CacheTTL, cfg.RequestTimeout)
 	handlers := httpapi.NewHandlers(service)
 
-	router := httpapi.SetupRoutes(handlers)
+	router := httpapi.SetupRoutes(handlers, cfg.EnableSwagger)
 
 	router.Use(telemetry.RequestIDMiddleware)
 	router.Use(telemetry.LoggingMiddleware(logger))
 	router.Use(telemetry.RecoveryMiddleware(logger))
 	router.Use(httpmiddleware.CorsMiddleware)
-	router.Use(httpmiddleware.AuthMiddleware(cfg.APIKey))
+	router.Use(httpmiddleware.AuthMiddleware(cfg.APIKey, cfg.EnableSwagger))
 
 	server := &http.Server{
 		Handler:      router,
