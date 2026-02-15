@@ -46,46 +46,49 @@ type Config struct {
 	DBConnMaxIdleTime time.Duration
 }
 
+type Env struct {
+	DBHost     string
+	DBPort     string
+	DBUser     string
+	DBPassword string
+	DBName     string
+
+	RedisHost     string
+	RedisPort     string
+	RedisPassword string
+	RedisDBName   int
+
+	BaseURL        string
+	MigrationsPath string
+	APIKey         string
+	Address        string
+
+	ReadTimeout             time.Duration
+	WriteTimeout            time.Duration
+	IdleTimeout             time.Duration
+	GracefulShutdownTimeout time.Duration
+	RequestTimeout          time.Duration
+	CacheTTL                time.Duration
+
+	DBMaxOpenConns    int
+	DBMaxIdleConns    int
+	DBConnMaxLifetime time.Duration
+	DBConnMaxIdleTime time.Duration
+}
+
 func Load() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using environment variables")
+	if _, err := os.Stat(".env"); err == nil {
+		if err = godotenv.Load(); err != nil {
+			log.Printf("Failed to load .env: %v", err)
+		}
 	}
 
-	cfg := &Config{
-		DBHost:     getRequiredString("DB_HOST"),
-		DBPort:     getRequiredString("DB_PORT"),
-		DBUser:     getRequiredString("DB_USER"),
-		DBPassword: getRequiredString("DB_PASSWORD"),
-		DBName:     getRequiredString("DB_NAME"),
-
-		RedisHost:     getRequiredString("REDIS_HOST"),
-		RedisPort:     getRequiredString("REDIS_PORT"),
-		RedisPassword: getRequiredString("REDIS_PASSWORD"),
-		RedisDBName:   getInt("REDIS_DB_NAME", 0),
-
-		BaseURL:        strings.TrimRight(getRequiredString("BASE_URL"), "/"),
-		MigrationsPath: getRequiredString("MIGRATIONS_PATH"),
-		APIKey:         getRequiredString("API_KEY"),
-		Server: ServerConfig{
-			Address:                 getRequiredString("ADDRESS"),
-			ReadTimeout:             getDuration("READ_TIMEOUT", 15*time.Second),
-			WriteTimeout:            getDuration("WRITE_TIMEOUT", 15*time.Second),
-			IdleTimeout:             getDuration("IDLE_TIMEOUT", 60*time.Second),
-			GracefulShutdownTimeout: getDuration("GRACEFUL_SHUTDOWN_TIMEOUT", 5*time.Second),
-		},
-		CacheTTL:          getDuration("CACHE_TTL", 1*time.Hour),
-		RequestTimeout:    getDuration("REQUEST_TIMEOUT", 5*time.Second),
-		DBMaxOpenConns:    getInt("DB_MAX_OPEN_CONNS", 25),
-		DBMaxIdleConns:    getInt("DB_MAX_IDLE_CONNS", 10),
-		DBConnMaxLifetime: getDuration("DB_CONN_MAX_LIFETIME", 30*time.Minute),
-		DBConnMaxIdleTime: getDuration("DB_CONN_MAX_IDLE_TIME", 5*time.Minute),
-	}
-
-	if err := cfg.Validate(); err != nil {
+	env := FromEnv(os.Environ())
+	if err := env.Validate(); err != nil {
 		return nil, err
 	}
 
-	return cfg, nil
+	return env.ToConfig(), nil
 }
 
 func (c *Config) GetPostgresConnString() string {
@@ -100,26 +103,62 @@ func (c *Config) GetRedisOpts() *redis.Options {
 	}
 }
 
-func (c *Config) Validate() error {
+func FromEnv(envVars []string) Env {
+	envMap := toEnvMap(envVars)
+	return Env{
+		DBHost:     getRequiredString(envMap, "DB_HOST"),
+		DBPort:     getRequiredString(envMap, "DB_PORT"),
+		DBUser:     getRequiredString(envMap, "DB_USER"),
+		DBPassword: getRequiredString(envMap, "DB_PASSWORD"),
+		DBName:     getRequiredString(envMap, "DB_NAME"),
+
+		RedisHost:     getRequiredString(envMap, "REDIS_HOST"),
+		RedisPort:     getRequiredString(envMap, "REDIS_PORT"),
+		RedisPassword: getRequiredString(envMap, "REDIS_PASSWORD"),
+		RedisDBName:   getInt(envMap, "REDIS_DB_NAME", 0),
+
+		BaseURL:        strings.TrimRight(getRequiredString(envMap, "BASE_URL"), "/"),
+		MigrationsPath: getRequiredString(envMap, "MIGRATIONS_PATH"),
+		APIKey:         getRequiredString(envMap, "API_KEY"),
+		Address:        getRequiredString(envMap, "ADDRESS"),
+
+		ReadTimeout:             getDuration(envMap, "READ_TIMEOUT", 15*time.Second),
+		WriteTimeout:            getDuration(envMap, "WRITE_TIMEOUT", 15*time.Second),
+		IdleTimeout:             getDuration(envMap, "IDLE_TIMEOUT", 60*time.Second),
+		GracefulShutdownTimeout: getDuration(envMap, "GRACEFUL_SHUTDOWN_TIMEOUT", 5*time.Second),
+		RequestTimeout:          getDuration(envMap, "REQUEST_TIMEOUT", 5*time.Second),
+		CacheTTL:                getDuration(envMap, "CACHE_TTL", 1*time.Hour),
+
+		DBMaxOpenConns:    getInt(envMap, "DB_MAX_OPEN_CONNS", 25),
+		DBMaxIdleConns:    getInt(envMap, "DB_MAX_IDLE_CONNS", 10),
+		DBConnMaxLifetime: getDuration(envMap, "DB_CONN_MAX_LIFETIME", 30*time.Minute),
+		DBConnMaxIdleTime: getDuration(envMap, "DB_CONN_MAX_IDLE_TIME", 5*time.Minute),
+	}
+}
+
+func (e Env) Validate() error {
 	var missing []string
-	required := []string{
-		"DB_HOST",
-		"DB_PORT",
-		"DB_USER",
-		"DB_PASSWORD",
-		"DB_NAME",
-		"REDIS_HOST",
-		"REDIS_PORT",
-		"REDIS_PASSWORD",
-		"BASE_URL",
-		"MIGRATIONS_PATH",
-		"API_KEY",
-		"ADDRESS",
+	required := []struct {
+		name  string
+		value string
+	}{
+		{"DB_HOST", e.DBHost},
+		{"DB_PORT", e.DBPort},
+		{"DB_USER", e.DBUser},
+		{"DB_PASSWORD", e.DBPassword},
+		{"DB_NAME", e.DBName},
+		{"REDIS_HOST", e.RedisHost},
+		{"REDIS_PORT", e.RedisPort},
+		{"REDIS_PASSWORD", e.RedisPassword},
+		{"BASE_URL", e.BaseURL},
+		{"MIGRATIONS_PATH", e.MigrationsPath},
+		{"API_KEY", e.APIKey},
+		{"ADDRESS", e.Address},
 	}
 
-	for _, key := range required {
-		if value, exists := os.LookupEnv(key); !exists || strings.TrimSpace(value) == "" {
-			missing = append(missing, key)
+	for _, item := range required {
+		if strings.TrimSpace(item.value) == "" {
+			missing = append(missing, item.name)
 		}
 	}
 
@@ -130,25 +169,46 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func getString(key string, defaultValue string) string {
-	value, exists := os.LookupEnv(key)
-	if !exists {
-		return defaultValue
+func (e Env) ToConfig() *Config {
+	return &Config{
+		DBHost:     e.DBHost,
+		DBPort:     e.DBPort,
+		DBUser:     e.DBUser,
+		DBPassword: e.DBPassword,
+		DBName:     e.DBName,
+
+		RedisHost:     e.RedisHost,
+		RedisPort:     e.RedisPort,
+		RedisPassword: e.RedisPassword,
+		RedisDBName:   e.RedisDBName,
+
+		BaseURL:        strings.TrimRight(e.BaseURL, "/"),
+		MigrationsPath: e.MigrationsPath,
+		APIKey:         e.APIKey,
+		Server: ServerConfig{
+			Address:                 e.Address,
+			ReadTimeout:             e.ReadTimeout,
+			WriteTimeout:            e.WriteTimeout,
+			IdleTimeout:             e.IdleTimeout,
+			GracefulShutdownTimeout: e.GracefulShutdownTimeout,
+		},
+		CacheTTL:          e.CacheTTL,
+		RequestTimeout:    e.RequestTimeout,
+		DBMaxOpenConns:    e.DBMaxOpenConns,
+		DBMaxIdleConns:    e.DBMaxIdleConns,
+		DBConnMaxLifetime: e.DBConnMaxLifetime,
+		DBConnMaxIdleTime: e.DBConnMaxIdleTime,
 	}
+}
+
+func getRequiredString(envMap map[string]string, key string) string {
+	value := strings.TrimSpace(envMap[key])
 	return value
 }
 
-func getRequiredString(key string) string {
-	value, exists := os.LookupEnv(key)
-	if !exists || strings.TrimSpace(value) == "" {
-		return ""
-	}
-	return value
-}
-
-func getInt(key string, defaultValue int) int {
-	valueStr, exists := os.LookupEnv(key)
-	if !exists {
+func getInt(envMap map[string]string, key string, defaultValue int) int {
+	valueStr := strings.TrimSpace(envMap[key])
+	if valueStr == "" {
 		return defaultValue
 	}
 	value, err := strconv.Atoi(valueStr)
@@ -159,9 +219,9 @@ func getInt(key string, defaultValue int) int {
 	return value
 }
 
-func getDuration(key string, defaultValue time.Duration) time.Duration {
-	valueStr, exists := os.LookupEnv(key)
-	if !exists {
+func getDuration(envMap map[string]string, key string, defaultValue time.Duration) time.Duration {
+	valueStr := strings.TrimSpace(envMap[key])
+	if valueStr == "" {
 		return defaultValue
 	}
 	value, err := time.ParseDuration(valueStr)
@@ -170,4 +230,16 @@ func getDuration(key string, defaultValue time.Duration) time.Duration {
 		return defaultValue
 	}
 	return value
+}
+
+func toEnvMap(envVars []string) map[string]string {
+	envMap := make(map[string]string, len(envVars))
+	for _, entry := range envVars {
+		key, value, ok := strings.Cut(entry, "=")
+		if !ok {
+			continue
+		}
+		envMap[key] = value
+	}
+	return envMap
 }
