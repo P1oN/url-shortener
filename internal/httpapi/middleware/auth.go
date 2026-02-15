@@ -13,6 +13,10 @@ func AuthMiddleware(apiKey string, allowUnauthedDocs bool) func(http.Handler) ht
 				next.ServeHTTP(w, r)
 				return
 			}
+			if isPublicRedirectRequest(r) {
+				next.ServeHTTP(w, r)
+				return
+			}
 			if allowUnauthedDocs && (r.URL.Path == "/swagger" || strings.HasPrefix(r.URL.Path, "/swagger/")) {
 				next.ServeHTTP(w, r)
 				return
@@ -33,4 +37,24 @@ func AuthMiddleware(apiKey string, allowUnauthedDocs bool) func(http.Handler) ht
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func isPublicRedirectRequest(r *http.Request) bool {
+	if r.Method != http.MethodGet {
+		return false
+	}
+
+	trimmed := strings.Trim(strings.TrimSpace(r.URL.Path), "/")
+	if trimmed == "" {
+		return false
+	}
+
+	// /v1/{code}
+	if strings.HasPrefix(trimmed, "v1/") {
+		code := strings.TrimPrefix(trimmed, "v1/")
+		return code != "" && !strings.Contains(code, "/")
+	}
+
+	// /{code}
+	return !strings.Contains(trimmed, "/") && trimmed != "v1" && trimmed != "swagger"
 }
