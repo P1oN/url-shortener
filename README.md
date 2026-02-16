@@ -44,6 +44,24 @@ Optional tuning:
    go run ./cmd/server
    ```
 
+## Docker Dev Mode (Hot Reload)
+Use this when you want code changes to auto-restart the app container without rebuilding/restarting Compose.
+
+1. Start dev stack:
+   ```bash
+   make dev-up
+   ```
+2. Apply migrations once:
+   ```bash
+   make dev-migrate-up
+   ```
+3. Tail app logs:
+   ```bash
+   make dev-logs
+   ```
+
+The `app` container runs `air` with `.air.toml`, watching source changes and rebuilding `cmd/server` automatically.
+
 ## Local Commands
 ```bash
 make run
@@ -55,6 +73,10 @@ make test-integration
 make migrate-up-integration
 make openapi-generate
 make openapi-check
+make dev-up
+make dev-migrate-up
+make dev-logs
+make dev-down
 ```
 
 ## API
@@ -91,6 +113,7 @@ Response:
 
 ### Redirect
 `GET /v1/{code}`
+`GET /{code}`
 
 ### Health
 `GET /v1/health` (no auth)

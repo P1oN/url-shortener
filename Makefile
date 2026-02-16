@@ -1,6 +1,6 @@
 SHELL := /bin/sh
 
-.PHONY: help run migrate-up migrate-down migrate-version build test test-integration migrate-up-integration openapi-generate openapi-check
+.PHONY: help run migrate-up migrate-down migrate-version build test test-integration migrate-up-integration openapi-generate openapi-check dev-up dev-down dev-logs dev-migrate-up
 
 help:
 	@printf "Targets:\n"
@@ -14,6 +14,10 @@ help:
 	@printf "  migrate-up-integration   Run migration integration test\n"
 	@printf "  openapi-generate   Generate OpenAPI server contract code\n"
 	@printf "  openapi-check      Verify OpenAPI generated files are up to date\n"
+	@printf "  dev-up             Start Docker dev stack with hot reload\n"
+	@printf "  dev-down           Stop Docker dev stack\n"
+	@printf "  dev-logs           Tail app logs from Docker dev stack\n"
+	@printf "  dev-migrate-up     Apply migrations in Docker dev app container\n"
 
 run:
 	go run ./cmd/server
@@ -47,3 +51,15 @@ openapi-generate:
 openapi-check:
 	$(MAKE) openapi-generate
 	git diff --exit-code
+
+dev-up:
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
+
+dev-down:
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+
+dev-logs:
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f app
+
+dev-migrate-up:
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app go run ./cmd/migrate --up

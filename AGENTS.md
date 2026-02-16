@@ -17,6 +17,8 @@
 - `pkg/utils`: shared helpers.
 - `config`: environment/config loading and validation.
 - `migrations`: SQL migrations (`###_name.up.sql` / `###_name.down.sql`).
+- `docker-compose.dev.yml`: Docker override for hot-reload development.
+- `.air.toml`: hot-reload config for Go app container.
 - `.env` / `.env.example`: runtime configuration (never commit real secrets).
 
 ## Build, Test, and Development Commands
@@ -39,6 +41,10 @@
 - `make migrate-up-integration`: run the migration integration test.
 - `make openapi-generate`: regenerate OpenAPI-derived artifacts.
 - `make openapi-check`: verify generated OpenAPI artifacts are up to date.
+- `make dev-up`: start Docker dev stack with hot reload.
+- `make dev-migrate-up`: apply migrations in the dev app container.
+- `make dev-logs`: tail dev app logs.
+- `make dev-down`: stop Docker dev stack.
 
 ## Coding Style & Naming Conventions
 - Follow standard Go formatting; use `gofmt` before commit.

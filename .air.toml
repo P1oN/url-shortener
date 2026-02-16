@@ -1,0 +1,14 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/main ./cmd/server"
+bin = "./tmp/main"
+include_ext = ["go", "yaml", "yml", "json", "env"]
+exclude_dir = ["tmp", "vendor", ".git"]
+
+[log]
+time = true
+
+[misc]
+clean_on_exit = true
